@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Transcription and Diarization Web App</title>
+    <script>
+        async function sendAudioToAPI() {
+            const fileInput = document.getElementById('audioInput');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                alert("Please upload an audio file first.");
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            reader.onload = async function () {
+                const base64Audio = reader.result.split(",")[1];
+
+                const apiUrl = "https://aadnk-faster-whisper-webui.hf.space/run/predict";
+                const payload = {
+                    "data": [
+                        "medium",             // Model size
+                        "Hebrew",             // Language
+                        "",                   // URL (not used here)
+                        { "name": file.name, "data": `data:audio/wav;base64,${base64Audio}` },
+                        null,                  // Microphone Input (not used here)
+                        "transcribe",         // Task
+                        "silero-vad",         // VAD type
+                        5,                     // VAD Merge Window (s)
+                        30,                    // VAD Max Merge Size (s)
+                        false,                 // Word Timestamps
+                        false,                 // Highlight Words
+                        true,                  // Diarization
+                        2                      // Number of speakers
+                    ]
+                };
+
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json"
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    const transcription = result.data[1]; // Get the transcription text
+                    document.getElementById("result").textContent = transcription;
+                } catch (error) {
+                    console.error("Error:", error);
+                    document.getElementById("result").textContent = "An error occurred. Please check the console for more details.";
+                }
+            };
+        }
+    </script>
+</head>
+<body>
+    <h1>Upload an Audio File for Transcription and Diarization</h1>
+    <input type="file" id="audioInput" accept="audio/*">
+    <button onclick="sendAudioToAPI()">Submit</button>
+    <pre id="result"></pre>
+</body>
+</html>
