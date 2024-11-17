@@ -6,17 +6,21 @@
     <title>Transcription and Diarization Web App</title>
     <script>
         async function sendAudioToAPI() {
+            console.log("Button clicked, starting process...");
             const fileInput = document.getElementById('audioInput');
             const file = fileInput.files[0];
             
             if (!file) {
                 alert("Please upload an audio file first.");
+                console.log("No file uploaded.");
                 return;
             }
 
+            console.log("File uploaded: ", file.name);
             const reader = new FileReader();
             reader.readAsDataURL(file);
             reader.onload = async function () {
+                console.log("File reading completed.");
                 const base64Audio = reader.result.split(",")[1];
 
                 const apiUrl = "https://aadnk-faster-whisper-webui.hf.space/run/predict";
@@ -38,6 +42,7 @@
                     ]
                 };
 
+                console.log("Sending request to API...");
                 try {
                     const response = await fetch(apiUrl, {
                         method: "POST",
@@ -46,13 +51,20 @@
                         },
                         body: JSON.stringify(payload)
                     });
+                    console.log("Received response from API.");
                     const result = await response.json();
+                    console.log("API response: ", result);
                     const transcription = result.data[1]; // Get the transcription text
                     document.getElementById("result").textContent = transcription;
                 } catch (error) {
-                    console.error("Error:", error);
+                    console.error("Error during API request:", error);
                     document.getElementById("result").textContent = "An error occurred. Please check the console for more details.";
                 }
+            };
+
+            reader.onerror = function (error) {
+                console.error("Error reading file:", error);
+                document.getElementById("result").textContent = "An error occurred while reading the file.";
             };
         }
     </script>
